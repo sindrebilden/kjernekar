@@ -13,6 +13,7 @@ class Slack:
             web_client=WebClient(token=bot_token)
         )
 
+
     def addHandler(self, handler):
         # Add a new listener to receive messages from Slack
         # You can add more listeners like this
@@ -29,6 +30,9 @@ class Slack:
             thread_ts=thread_ts    
         )
 
+    def upload(self, channel=None, file=None, title=None):
+        self.client.web_client.files_upload(channels=channel, file=file, title=title)
+
     def respond(self, req, text=None, blocks=None, thread=False):
         self.say(
             channel=req.payload["event"]["channel"],
@@ -38,16 +42,23 @@ class Slack:
         )
     
     def react(self, req, emoji='kj'):
-
-        print(req.payload["event"]["channel"], req.payload["event"]["ts"])
         self.client.web_client.reactions_add(
             name=emoji,
             channel=req.payload["event"]["channel"],
             timestamp=req.payload["event"]["ts"],
         )
 
-    def acknowledge(self, req, payload=None):
-        response = SocketModeResponse(envelope_id=req.envelope_id, payload=payload)
+
+    def delete(self, channel, ts):
+        self.client.web_client.chat_delete(channel=channel, ts=ts)
+
+    def acknowledge(self, req=None, payload=None, envelope_id=None):
+        eid = (envelope_id if req is None else req.envelope_id)
+        print("EID: {}".format(eid))
+        response = SocketModeResponse(
+            envelope_id=eid,
+            payload=payload,
+        )
         self.client.send_socket_mode_response(response)
 
 
