@@ -35,40 +35,51 @@ class Kjernekar:
         self.slack.react(req, emoji='eyes')
 
     def slack_command_haiku_handler(self, req):
-        payload = self.slack.load_view('interactive.json')
-        self.slack.acknowledge(req=req, payload=payload)
+        print(req.payload)
+
+        success = self.haiku_handle_command(
+            option=req.payload['text'], 
+            user=req.payload["user_name"],
+            channel=req.payload['channel_id'],
+            req=req,
+            acknowledge_callback=self.slack.acknowledge
+        )
+
+        if not success:
+            payload = self.slack.load_view('interactive.json')
+            self.slack.acknowledge(req=req, payload=payload)
         
     def slack_handle_interactive(self, req):
         option = req.payload['state']['values']['section']['action']['selected_option']['value']
-        
-        if option == 'wordcloud' or option == 'stats timeline':
-            self.slack.acknowledge_interaction(req)
 
-            image, filename = self.haiku.handle_command(option, req.payload["user"]["username"])
-            self.slack.say(
-                channel=req.payload['channel']['id'],
-                text="A {} comming up!"
-            )
-            self.slack.upload(
-                channel=req.payload['channel']['id'],
-                file=image,
-                title=filename
-            )
+        self.haiku_handle_command(
+            option=req.payload['text'], 
+            user=req.payload["user"]["username"],
+            channel=req.payload['channel']['id'],
+            req=req,
+            acknowledge_callback=self.slack.acknowledge_interaction
+        )
+
+    def haiku_handle_command(self, option, user=None, channel=None, req=None, acknowledge_callback=None):
+        if option == 'wordcloud' or option == 'stats timeline':
+            acknowledge_callback(req)
+
+            image, filename = self.haiku.handle_command(option, user)
+            self.slack.say(channel=channel, text="A {} comming up!")
+            self.slack.upload(channel=channel,file=image,title=filename)
+            return True
         elif option == 'stats top':
-            stats = self.haiku.handle_command(option, req.payload["user"]["username"])
+            stats = self.haiku.handle_command(option, user)
 
             if len(stats) < 1:
-                self.slack.acknowledge_interaction(req, text="Couldn't find any haikus.")
-                return
+                acknowledge_callback(req, text="Couldn't find any haikus.")
             else:
-                self.slack.acknowledge_interaction(req)
+                acknowledge_callback(req)
                 
-                self.slack.say(
-                    channel=req.payload['channel']['id'],
-                    blocks=self.format_stats(stats)
-                )
+                self.slack.say(channel=channel, blocks=self.format_stats(stats))
+            return True
         else:      
-            self.slack.acknowledge_interaction(req, text='I cannot do that!')
+            return False
 
 
     def format_stats(self, stats):

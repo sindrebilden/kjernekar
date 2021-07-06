@@ -64,13 +64,22 @@ class Slack:
     def delete(self, channel, ts):
         self.client.web_client.chat_delete(channel=channel, ts=ts)
 
-    def acknowledge(self, req=None, payload=None, envelope_id=None):
+    def acknowledge(self, req=None, text=None, payload=None, envelope_id=None):
         eid = (envelope_id if req is None else req.envelope_id)
 
-        response = SocketModeResponse(
-            envelope_id=eid,
-            payload=payload,
-        )
+        if (payload is not None):
+            response = SocketModeResponse(
+                envelope_id=eid,
+                payload=payload,
+            )
+        elif text is not None:
+            response = SocketModeResponse(
+                envelope_id=eid,
+                payload={ "text": text },
+            )
+        else:
+            response = SocketModeResponse(envelope_id=eid)
+            
         self.client.send_socket_mode_response(response)
 
         
