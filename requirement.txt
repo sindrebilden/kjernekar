@@ -1,1 +1,2 @@
-slack_bolt
+slack_sdk
+colorharmonies

@@ -1,5 +1,7 @@
 import os
+import json
 from slack.Slack import Slack
+from utils.color import string_to_color_hex
 from threading import Event
 from haikubot.bot import Haikubot
 
@@ -33,128 +35,90 @@ class Kjernekar:
         self.slack.react(req, emoji='eyes')
 
     def slack_command_haiku_handler(self, req):
-        payload = {
-            "blocks": [
-                {
-                    "type": "header",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Haiku"
-                    }
-                },
-                {
-                    "type": "section",
-                    "block_id": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": "What do you want to do?"
-                    },
-                    "accessory": {
-                        "action_id": "action",
-                        "type": "static_select",
-                        "placeholder": {
-                            "type": "plain_text",
-                            "text": "Select an action"
-                    },
-                    "options": [
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Create a wordcloud"
-                            },
-                            "value": "wordcloud"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Create a timeline"
-                            },
-                            "value": "stats timeline"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Show stats list"
-                            },
-                            "value": "stats top"
-                        },
-                        {
-                            "text": {
-                                "type": "plain_text",
-                                "text": "Export haikus"
-                            },
-                            "value": "export"
-                        }
-                    ]
-                    }
-                },
-                {
-                    "type": "section",
-                    "block_id": "section2",
-                    "text": {
-                    "type": "mrkdwn",
-                    "text": "Pick users from the list"
-                    },
-                    "accessory": {
-                    "action_id": "users",
-                    "type": "multi_users_select",
-                    "placeholder": {
-                        "type": "plain_text",
-                        "text": "Select users"
-                    },
-                    "max_selected_items": 1 
-                    }
-                }
-            ]
-        }
-        self.envelope_id = req.envelope_id
+        payload = self.slack.load_view('interactive.json')
         self.slack.acknowledge(req=req, payload=payload)
         
     def slack_handle_interactive(self, req):
-        print("HANDLER")
-        print(req.payload)
         option = req.payload['state']['values']['section']['action']['selected_option']['value']
-        print(option)
-
+        
         if option == 'wordcloud' or option == 'stats timeline':
-            self.slack.acknowledge(
-                envelope_id=self.envelope_id, 
-                payload={ 
-                    "delete_original": "true",
-                    "response_type": "ephemeral",
-                    "text": 'One {} comming up!'.format(option)
-                }
-            )
-            image, filename = self.haiku.handle_command(option, req.payload["user"]["username"])
+            self.slack.acknowledge_interaction(req)
 
+            image, filename = self.haiku.handle_command(option, req.payload["user"]["username"])
+            self.slack.say(
+                channel=req.payload['channel']['id'],
+                text="A {} comming up!"
+            )
             self.slack.upload(
                 channel=req.payload['channel']['id'],
                 file=image,
                 title=filename
             )
-        else:      
-            self.slack.acknowledge(
-                envelope_id=self.envelope_id,
-                payload={ 
-                    "delete_original": "true",
-                    "response_type": "ephemeral",
-                                "text": 'I cannot do that'
-                }
-            )
+        elif option == 'stats top':
+            stats = self.haiku.handle_command(option, req.payload["user"]["username"])
 
-        # Delete window after command
-        """self.slack.delete(
-            channel=req.payload['container']['channel_id'],
-            ts=req.payload['container']['message_ts']
-        )"""
+            if len(stats) < 1:
+                self.slack.acknowledge_interaction(req, text="Couldn't find any haikus.")
+                return
+            else:
+                self.slack.acknowledge_interaction(req)
+                
+                self.slack.say(
+                    channel=req.payload['channel']['id'],
+                    blocks=self.format_stats(stats)
+                )
+        else:      
+            self.slack.acknowledge_interaction(req, text='I cannot do that!')
+
+
+    def format_stats(self, stats):
+        title = 'Haiku stats: # of haikus per user'
+        attachments = [{
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": title
+            }
+        }]
         
-    def formatHaiku(self, haiku):
+        for i in range(len(stats)):
+            attachments.append({
+			"type": "context",
+			"elements": [
+				{
+					"type": "mrkdwn",
+					"text": self.format_placement(i + 1)
+				}, #TODO: Legg inn generert bilde med farge
+				{
+					"type": "mrkdwn",
+					"text": "With {} haiku: @{}".format(stats[i][1], stats[i][0])
+				}
+			]
+		})
+
+        return attachments
+
+    def format_placement(self, place):
+        if (place == 1):
+            return ':first_place_medal:'
+        if (place == 2):
+            return ':second_place_medal:'
+        if (place == 3):
+            return ':third_place_medal:'
+        
+        return '#{}'.format(place)
+
+        
+    def format_haiku(self, haiku):
         haiku_id = haiku[0][0]
         haiku_content = haiku[0][1]
         haiku_author = haiku[0][2]
+        haiku_link = haiku[0][4]
 
         return {
-            "text": haiku_content
+            'type': 'mrkdwn',
+            'text': "<{}|Haiku #{}> \n{}".format(haiku_link, haiku_id, haiku_content),
+            'color': string_to_color_hex(stats[i][0])
         }
 
 if __name__ == "__main__":
@@ -164,8 +128,4 @@ if __name__ == "__main__":
         slack_channel_haiku='G01622BNT45'
     )
 
-
-
     Event().wait()
-
-    

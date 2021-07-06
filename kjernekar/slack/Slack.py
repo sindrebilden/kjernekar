@@ -1,4 +1,6 @@
 import os
+import json
+import urllib3
 from slack_sdk.web import WebClient
 from slack_sdk.socket_mode import SocketModeClient
 
@@ -22,23 +24,33 @@ class Slack:
     def connect(self):
         self.client.connect()
 
-    def say(self, channel=None, text=None, blocks=None, thread_ts=None):
-        self.client.web_client.chat_postMessage(
-            channel=channel,
-            text=text,
-            blocks=blocks,
-            thread_ts=thread_ts    
-        )
+    def say(self, channel=None, text=None, blocks=None, thread_ts=None, user=None):
+        if (user is not None):
+            self.client.web_client.chat_postEphemeral(
+                channel=channel,
+                text=text,
+                blocks=blocks,
+                thread_ts=thread_ts,
+                user=user
+            )
+        else:
+            self.client.web_client.chat_postMessage(
+                channel=channel,
+                text=text,
+                blocks=blocks,
+                thread_ts=thread_ts    
+            )
 
     def upload(self, channel=None, file=None, title=None):
         self.client.web_client.files_upload(channels=channel, file=file, title=title)
 
-    def respond(self, req, text=None, blocks=None, thread=False):
+    def respond(self, req, text=None, blocks=None, thread=False, user=None):
         self.say(
             channel=req.payload["event"]["channel"],
             text=text,
             blocks=blocks,
-            thread_ts=(req.payload["event"]["ts"] if thread else None)
+            thread_ts=(req.payload["event"]["ts"] if thread else None),
+            user=user
         )
     
     def react(self, req, emoji='kj'):
@@ -54,12 +66,51 @@ class Slack:
 
     def acknowledge(self, req=None, payload=None, envelope_id=None):
         eid = (envelope_id if req is None else req.envelope_id)
-        print("EID: {}".format(eid))
+
         response = SocketModeResponse(
             envelope_id=eid,
             payload=payload,
         )
         self.client.send_socket_mode_response(response)
+
+        
+    def acknowledge_interaction(self, req, text=None):
+        url = req.payload["response_url"]
+        http=urllib3.PoolManager()
+
+        if text is None:
+            payload = {
+                "delete_original": "true"
+            }
+        else:
+            payload = {
+                "text": text,
+                "replace_original": "true"
+            }
+
+        r = http.request(
+            'POST', 
+            url,
+            headers={'Content-type': 'application/json'},
+            body=json.dumps(payload)
+        )
+        
+
+    def respond_interaction(self, req, text=None, blocks=None, thread=False):
+        self.say(
+            channel=req.payload["channel"]["id"],
+            text=text,
+            blocks=blocks,
+            user=req.payload["user"]["id"]
+        )
+
+    def load_view(self, filename):
+        dirpath = os.path.dirname(__file__)
+        filepath = os.path.join(dirpath, filename)
+        with open(filepath) as json_file:
+            data = json.load(json_file)
+        
+            return data
 
 
 if __name__ == "__main__":
@@ -68,37 +119,6 @@ if __name__ == "__main__":
         bot_token=os.environ.get("SLACK_BOT_TOKEN")
     )
 
-    def process(client: SocketModeClient, req: SocketModeRequest):
-        print(req.type)
-        print(req.payload)
-        if req.type == "events_api" and req.payload["event"]["type"] == "app_mention" :
-            # Acknowledge the request anyway
-            response = SocketModeResponse(envelope_id=req.envelope_id)
-            client.send_socket_mode_response(response)
-            
-            slack.respond(req, text='Hei hei!')
-            
-            slack.react(req, emoji='eyes')
-
-        # Handle haiku
-        if req.type == "slash_commands" and req.payload["command"] == "/haiku":           
-            #TODO: Check which action or post buttons?
-            response = SocketModeResponse(
-                envelope_id=req.envelope_id, 
-                payload={
-                    "text": 'test'
-                }
-            )
-            client.send_socket_mode_response(response)
-
-            slack.say(channel=req.payload["channel_id"], text=req.payload["text"])
-        
-
-
-    slack.addHandler(process)
-
     slack.connect()
 
-    slack.say(channel='G01622BNT45', text='Hello :wave:')
-
-    Event().wait()
+    slack.say(channel='<channel-id>', text='Hello :wave:')
