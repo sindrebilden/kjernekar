@@ -1,20 +1,19 @@
 import os
 import json
 import urllib3
+from threading import Event, Thread
 from slack_sdk.web import WebClient
 from slack_sdk.socket_mode import SocketModeClient
 
 from slack_sdk.socket_mode.response import SocketModeResponse
 from slack_sdk.socket_mode.request import SocketModeRequest
 
-class Slack:
-    def __init__(self, app_token=None, bot_token=None):
-        # Initialize SocketModeClient with an app-level token + WebClient
+class Slack(Thread):
+    def __init__(self):
         self.client = SocketModeClient(
-            app_token=app_token,
-            web_client=WebClient(token=bot_token)
+            app_token=os.environ.get("SLACK_APP_TOKEN"), 
+            web_client=WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
         )
-
 
     def addHandler(self, handler):
         # Add a new listener to receive messages from Slack
