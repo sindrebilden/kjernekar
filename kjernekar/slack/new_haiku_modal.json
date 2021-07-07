@@ -1,0 +1,54 @@
+{
+    "callback_id": "new-haiku-modal",
+    "title": {
+        "type": "plain_text",
+        "text": "Create new haiku"
+    },
+    "submit": {
+        "type": "plain_text",
+        "text": "Create haiku"
+    },
+    "blocks": [{
+            "block_id": "link-block",
+            "type": "input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "link-input",
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "https://jira.atlassian.nhn.no/browse/"
+                }
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Link"
+            },
+            "hint": {
+                "type": "plain_text",
+                "text": "Link to Jira-issue, pull-request or similar."
+            }
+        },
+        {
+            "block_id": "haiku-block",
+            "type": "input",
+            "element": {
+                "type": "plain_text_input",
+                "action_id": "haiku-input",
+                "multiline": true,
+                "placeholder": {
+                    "type": "plain_text",
+                    "text": "Remember, 5-7-5 syllables"
+                }
+            },
+            "label": {
+                "type": "plain_text",
+                "text": "Haiku"
+            },
+            "hint": {
+                "type": "plain_text",
+                "text": "A haiku related to your recent work"
+            }
+        }
+    ],
+    "type": "modal"
+}

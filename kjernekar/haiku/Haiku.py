@@ -49,10 +49,21 @@ class HaikuHandler():
         if haiku_id:
             logging.debug('Posting haiku #{} to {}'.format(haiku_id, self.slack_channel_haiku))
 
-            self.post_haiku(haiku, )
-            self.haikubot.mark_posted(haiku_id, haiku, author, link)
+            posted = self.post_haiku(haiku_id, haiku, author, link)
+
+            if posted:
+                self.haikubot.mark_posted(haiku_id)
+
+            return True
+
+        return False
 
     def post_haiku(self, haiku_id=None, haiku=None, author=None, link=None):
+        if haiku is None:
+            logging.debug('Haiku #{} has no content'.format(haiku_id))
+            return False
+
+
         self.slack.say(
             channel=self.slack_channel_haiku,
             blocks=[
@@ -81,6 +92,7 @@ class HaikuHandler():
                 }
             ]
         )
+        return True
 
     def handle_slack_haiku_command(self, req):
         option=req.payload['text']
@@ -101,15 +113,42 @@ class HaikuHandler():
             self.slack.acknowledge(req=req, payload=payload)
         
     def handle_slack_haiku_interactive(self, req):
-        option = req.payload['state']['values']['section']['action']['selected_option']['value']
+        print(req.payload)
 
-        self._haiku_handle_command(
-            option=option, 
-            user=req.payload["user"]["username"],
-            channel=req.payload['channel']['id'],
-            req=req,
-            acknowledge_callback=self.slack.acknowledge_interaction
-        )
+        if req.payload['type'] == 'block_actions':
+            option = req.payload['state']['values']['section']['action']['selected_option']['value']
+            if 'create_new' == option:
+                trigger_id=req.payload['trigger_id']
+                view=self.slack.load_view('new_haiku_modal.json')
+
+                self.slack.open_modal(trigger_id, view)
+
+                self.slack.acknowledge_interaction(req)
+                return
+
+            else:
+                self._haiku_handle_command(
+                    option=option, 
+                    user=req.payload["user"]["username"],
+                    channel=req.payload['channel']['id'],
+                    req=req,
+                    acknowledge_callback=self.slack.acknowledge_interaction
+                )
+                return
+        
+        if req.payload['type'] == 'view_submission' and req.payload['view']['callback_id'] == 'new-haiku-modal':
+            self._create_new_haiku(req)
+            self.slack.acknowledge_interaction(req)
+
+    def _create_new_haiku(self, req):
+        logging.debug('Creating new haiku')
+
+        user=req.payload["user"]["username"]
+        link=req.payload["view"]["state"]["values"]["link-block"]["link-input"]["value"]
+        haiku=req.payload["view"]["state"]["values"]["haiku-block"]["haiku-input"]["value"]
+
+        self.store_haiku(haiku, user, link)
+
 
     def _haiku_handle_command(self, option, user=None, channel=None, req=None, acknowledge_callback=None):
         if 'wordcloud' in option or 'stats timeline' in option:

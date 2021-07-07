@@ -103,6 +103,18 @@ class Slack(Thread):
             body=json.dumps(payload)
         )
         
+    def open_modal(self, trigger_id=None, view=None):
+        self.client.web_client.views_open(
+            trigger_id=trigger_id,
+            view=view
+        )
+
+    def update_modal(self, view_id=None, view=None):
+        self.client.web_client.views_update(
+            view_id=view_id,
+            view=view,
+
+        )
 
     def respond_interaction(self, req, text=None, blocks=None, thread=False):
         self.say(
