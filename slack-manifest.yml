@@ -13,7 +13,7 @@ features:
     always_online: false
   slash_commands:
     - command: /haiku
-      description: "Manage haikus and other important team activity"
+      description: "Manage haikus"
       usage_hint: help | show | stats | wordcloud
       should_escape: false
 oauth_config:
