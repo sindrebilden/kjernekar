@@ -83,13 +83,18 @@ class HaikuHandler():
         )
 
     def handle_slack_haiku_command(self, req):
-        success = self._haiku_handle_command(
-            option=req.payload['text'], 
-            user=req.payload["user_name"],
-            channel=req.payload['channel_id'],
-            req=req,
-            acknowledge_callback=self.slack.acknowledge
-        )
+        option=req.payload['text']
+        
+        if 'help' in option:
+            success = False
+        else:
+            success = self._haiku_handle_command(
+                option=option, 
+                user=req.payload["user_name"],
+                channel=req.payload['channel_id'],
+                req=req,
+                acknowledge_callback=self.slack.acknowledge
+            )
 
         if not success:
             payload = self.slack.load_view('interactive.json')
@@ -99,7 +104,7 @@ class HaikuHandler():
         option = req.payload['state']['values']['section']['action']['selected_option']['value']
 
         self._haiku_handle_command(
-            option=req.payload['text'], 
+            option=option, 
             user=req.payload["user"]["username"],
             channel=req.payload['channel']['id'],
             req=req,
@@ -118,8 +123,6 @@ class HaikuHandler():
                 
             acknowledge_callback(req)
             image, filename = result
-
-            self.slack.say(channel=channel, text="A {} comming up!")
             self.slack.upload(channel=channel,file=image,title=filename)
             return True
         elif 'stats top' in option:

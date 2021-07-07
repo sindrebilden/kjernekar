@@ -5,62 +5,59 @@
             "block_id": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "What do you want to do?"
+                "text": "Let me help you do what you want!"
             },
             "accessory": {
                 "action_id": "action",
                 "type": "static_select",
                 "placeholder": {
                     "type": "plain_text",
-                    "text": "Select an action"
-            },
-            "options": [
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Create a wordcloud"
-                    },
-                    "value": "wordcloud"
+                    "text": "What do you want to do?"
                 },
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Create a timeline"
+                "options": [
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create a wordcloud"
+                        },
+                        "value": "wordcloud"
                     },
-                    "value": "stats timeline"
-                },
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Show stats list"
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create a wordcloud of sprint"
+                        },
+                        "value": "wordcloud sprint"
                     },
-                    "value": "stats top"
-                },
-                {
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Export haikus"
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create a timeline"
+                        },
+                        "value": "stats timeline"
                     },
-                    "value": "export"
-                }
-            ]
-            }
-        },
-        {
-            "type": "section",
-            "block_id": "section2",
-            "text": {
-            "type": "mrkdwn",
-            "text": "Pick users from the list"
-            },
-            "accessory": {
-            "action_id": "users",
-            "type": "multi_users_select",
-            "placeholder": {
-                "type": "plain_text",
-                "text": "Select users"
-            },
-            "max_selected_items": 1 
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create a timeline last sprint"
+                        },
+                        "value": "stats timeline sprint"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Show stats list"
+                        },
+                        "value": "stats top"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Export haikus"
+                        },
+                        "value": "export"
+                    }
+                ]
             }
         }
     ]
