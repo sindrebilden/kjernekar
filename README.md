@@ -1,7 +1,6 @@
-# slack-bot
+# Kjernekar - The nicest guy on your team
 
-
-# Environment variables
+## Environment variables
 Kjernekar is configured by environment variables:
 ### Haikubot
 HAIKUBOT_DB_PATH - relative path to db-file
