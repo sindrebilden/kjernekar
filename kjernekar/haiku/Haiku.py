@@ -48,35 +48,39 @@ class HaikuHandler():
 
         if haiku_id:
             logging.debug('Posting haiku #{} to {}'.format(haiku_id, self.slack_channel_haiku))
-            self.slack.say(
-                channel=self.slack_channel_haiku,
-                blocks=[
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": "*<{}|Haiku #{}>*".format(link, haiku_id)
-                        }
-                    },
-                    {
-                        "type": "section",
-                        "text": {
-                            "type": "mrkdwn",
-                            "text": ">{}".format(haiku.replace('\n', '\n>'))
-                        }
-                    },
-                    {
-                        "type": "context",
-                        "elements": [
-                            {
-                                "type": "mrkdwn",
-                                "text": "- {}".format(author)
-                            }
-                        ]
+
+            self.post_haiku(haiku, )
+            self.haikubot.mark_posted(haiku_id, haiku, author, link)
+
+    def post_haiku(self, haiku_id=None, haiku=None, author=None, link=None):
+        self.slack.say(
+            channel=self.slack_channel_haiku,
+            blocks=[
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": "*<{}|Haiku #{}>*".format(link, haiku_id)
                     }
-                ]
-            )
-            self.haikubot.mark_posted(haiku_id)
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": ">{}".format(haiku.replace('\n', '\n>'))
+                    }
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": "- {}".format(author)
+                        }
+                    ]
+                }
+            ]
+        )
 
     def handle_slack_haiku_command(self, req):
         success = self._haiku_handle_command(
@@ -103,22 +107,43 @@ class HaikuHandler():
         )
 
     def _haiku_handle_command(self, option, user=None, channel=None, req=None, acknowledge_callback=None):
-        if option == 'wordcloud' or option == 'stats timeline':
+        if 'wordcloud' in option or 'stats timeline' in option:
             acknowledge_callback(req)
 
-            image, filename = self.haikubot.handle_command(option, user)
+            result =self.haikubot.handle_command(option, user)
+
+            if result == False:
+                acknowledge_callback(req, text="Couldn't create {}".format(option))
+                return False
+                
+            acknowledge_callback(req)
+            image, filename = result
+
             self.slack.say(channel=channel, text="A {} comming up!")
             self.slack.upload(channel=channel,file=image,title=filename)
             return True
-        elif option == 'stats top':
+        elif 'stats top' in option:
             stats = self.haikubot.handle_command(option, user)
 
             if len(stats) < 1:
                 acknowledge_callback(req, text="Couldn't find any haikus.")
+                return False
             else:
                 acknowledge_callback(req)
                 
                 self.slack.say(channel=channel, blocks=self.format_stats(stats))
+            return True
+        elif 'show' in option:
+            result = self.haikubot.handle_command(option, user)
+
+            if result[0] == False:
+                success, message = result
+                acknowledge_callback(req, text=message)
+
+                return False
+            acknowledge_callback(req)
+
+            self.post_haiku(haiku.hid, haiku.haiku, haiku.author, haiku.link)
             return True
         else:      
             return False
