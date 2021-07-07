@@ -20,7 +20,6 @@ oauth_config:
   scopes:
     bot:
       - app_mentions:read
-      - channels:history
       - chat:write
       - commands
       - emoji:read
