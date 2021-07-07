@@ -6,7 +6,7 @@ Kjernekar is configured by environment variables:
 ### Haikubot
 HAIKUBOT_DB_PATH - relative path to db-file
 HAIKUBOT_LOG_PATH - empty for console output
-
+HAIKUBOT_SUPER_USER - admin user
 ### Repository
 REPOSITORY_URL - url pulling pull-requests
 REPOSITORY_BASIC_AUTH - authentication token
