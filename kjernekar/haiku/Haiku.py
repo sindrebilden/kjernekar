@@ -183,7 +183,9 @@ class HaikuHandler:
         elif "show" in option:
             result = self.haikubot.handle_command(option.replace('@', ''), user)
 
-            print(result)
+            if result is None:
+                acknowledge_callback(req, text="Could not fint a haiku")
+                return False
 
             if result[0] == False:
                 success, message = result
