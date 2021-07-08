@@ -80,7 +80,12 @@ class Slack(Thread):
 
     def acknowledge_interaction(self, req, text=None):
         url = req.payload["response_url"]
-        http = urllib3.PoolManager()
+
+        proxy = os.environ.get("https_proxy")
+        if (proxy is None):
+            http = urllib3.PoolManager()
+        else:
+            http = urllib3.ProxyManager()
 
         if text is None:
             payload = {"delete_original": "true"}
@@ -91,7 +96,7 @@ class Slack(Thread):
             "POST",
             url,
             headers={"Content-type": "application/json"},
-            body=json.dumps(payload),
+            body=json.dumps(payload)
         )
 
     def open_modal(self, trigger_id=None, view=None):

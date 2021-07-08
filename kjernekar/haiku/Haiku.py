@@ -59,7 +59,7 @@ class HaikuHandler:
 
         return False
 
-    def post_haiku(self, haiku_id=None, haiku=None, author=None, link=None):
+    def post_haiku(self, haiku_id=None, haiku=None, author=None, link=None, meta=None):
         if haiku is None:
             logging.debug("Haiku #{} has no content".format(haiku_id))
             return False
@@ -83,7 +83,7 @@ class HaikuHandler:
                 },
                 {
                     "type": "context",
-                    "elements": [{"type": "mrkdwn", "text": "- {}".format(author)}],
+                    "elements": [{"type": "mrkdwn", "text": "- @{}\n{}".format(author, meta)}],
                 },
             ],
         )
@@ -181,7 +181,9 @@ class HaikuHandler:
                 self.slack.say(channel=channel, blocks=self.format_stats(stats))
             return True
         elif "show" in option:
-            result = self.haikubot.handle_command(option, user)
+            result = self.haikubot.handle_command(option.replace('@', ''), user)
+
+            print(result)
 
             if result[0] == False:
                 success, message = result
@@ -189,8 +191,12 @@ class HaikuHandler:
 
                 return False
             acknowledge_callback(req)
-
-            self.post_haiku(haiku.hid, haiku.haiku, haiku.author, haiku.link)
+            haiku_id = result[0]
+            haiku = result[1]
+            author = result[2]
+            link = result[5]
+            
+            self.post_haiku(result[0], result[1], result.author, result.link, meta="Reposted by @{}".format(user))
             return True
         else:
             return False
@@ -231,15 +237,3 @@ class HaikuHandler:
             return ":third_place_medal:"
 
         return "#{}".format(place)
-
-    def format_haiku(self, haiku):
-        haiku_id = haiku[0][0]
-        haiku_content = haiku[0][1]
-        haiku_author = haiku[0][2]
-        haiku_link = haiku[0][4]
-
-        return {
-            "type": "mrkdwn",
-            "text": "<{}|Haiku #{}> \n{}".format(haiku_link, haiku_id, haiku_content),
-            "color": string_to_color_hex(stats[i][0]),
-        }
