@@ -6,8 +6,16 @@ import time
 import urllib3
 from threading import Thread, Event
 
+
 class RepoWatcher(Thread):
-    def __init__(self, repo_url=None, basic_auth=None, poll_interval=30, callback=None, alive=True):
+    def __init__(
+        self,
+        repo_url=None,
+        basic_auth=None,
+        poll_interval=30,
+        callback=None,
+        alive=True,
+    ):
         Thread.__init__(self)
         self.repo_url = repo_url
         self.basic_auth = basic_auth
@@ -18,33 +26,26 @@ class RepoWatcher(Thread):
     def run(self):
         while self.alive:
             try:
-                logging.debug('Pulling from repo {}'.format(self.repo_url))
+                logging.debug("Pulling from repo {}".format(self.repo_url))
                 self.callback(self.fetch())
-            
+
                 for _ in range(self.poll_interval):
                     if self.alive:
                         time.sleep(1)
                     else:
                         return
-            
+
             except KeyboardInterrupt:
                 self.alive = False
 
     def fetch(self):
-        http=urllib3.PoolManager()
+        http = urllib3.PoolManager()
 
-        headers={
-            'Authorization': 'Bearer {}'.format(self.basic_auth)
-        }
+        headers = {"Authorization": "Bearer {}".format(self.basic_auth)}
 
-        resp = http.request(
-            'GET', 
-            self.repo_url,
-            headers=headers
-        )
+        resp = http.request("GET", self.repo_url, headers=headers)
 
-        return json.loads(resp.data.decode("utf-8"))['values']
-        
+        return json.loads(resp.data.decode("utf-8"))["values"]
 
 
 if __name__ == "__main__":
@@ -52,6 +53,6 @@ if __name__ == "__main__":
         repo_url=os.environ.get("REPOSITORY_URL"),
         basic_auth=os.environ.get("REPOSITORY_BASIC_AUTH"),
         poll_interval=5,
-        callback=print
+        callback=print,
     )
     repo.start()
