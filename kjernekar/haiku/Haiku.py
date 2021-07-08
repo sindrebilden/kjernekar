@@ -138,7 +138,7 @@ class HaikuHandler():
         
         if req.payload['type'] == 'view_submission' and req.payload['view']['callback_id'] == 'new-haiku-modal':
             self._create_new_haiku(req)
-            self.slack.acknowledge_interaction(req)
+            self.slack.acknowledge(req, payload={ "response_action": "clear" })
 
     def _create_new_haiku(self, req):
         logging.debug('Creating new haiku')

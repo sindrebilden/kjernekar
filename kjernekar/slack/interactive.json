@@ -56,6 +56,13 @@
                             "text": "Export haikus"
                         },
                         "value": "export"
+                    },
+                    {
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Create new haiku"
+                        },
+                        "value": "create_new"
                     }
                 ]
             }
