@@ -1,4 +1,5 @@
 import os
+import re
 import json
 from slack.Slack import Slack
 from threading import Thread, Event

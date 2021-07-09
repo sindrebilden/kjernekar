@@ -85,7 +85,7 @@ class Slack(Thread):
         if (proxy is None):
             http = urllib3.PoolManager()
         else:
-            http = urllib3.ProxyManager()
+            http = urllib3.ProxyManager(proxy)
 
         if text is None:
             payload = {"delete_original": "true"}

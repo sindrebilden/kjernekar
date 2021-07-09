@@ -1,8 +1,8 @@
 import os
+import re
 import logging
 from haikubot.bot import Haikubot
 from repo.repo import RepoWatcher
-
 
 class HaikuHandler:
     def __init__(self, slack):
@@ -37,10 +37,13 @@ class HaikuHandler:
             return False
 
         haiku = pull_request["description"]
-        author = pull_request["author"]["user"]["displayName"]
+        author = self.remove_email_domain(pull_request["author"]["user"]["emailAddress"])
         link = pull_request["links"]["self"][0]["href"]
 
         return haiku, author, link
+
+    def remove_email_domain(self, email):
+         return re.sub(r'@.*', '', email)
 
     def store_haiku(self, haiku=None, author=None, link=None):
         haiku_id = self.haikubot.store_haiku(haiku, author, link)
@@ -59,7 +62,7 @@ class HaikuHandler:
 
         return False
 
-    def post_haiku(self, haiku_id=None, haiku=None, author=None, link=None, meta=None):
+    def post_haiku(self, haiku_id=None, haiku=None, author=None, link=None, meta=''):
         if haiku is None:
             logging.debug("Haiku #{} has no content".format(haiku_id))
             return False
